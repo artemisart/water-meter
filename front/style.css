@@ -1,0 +1,25 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  /* height: 100vh; */
+  overflow: hidden;
+}
+
+div {
+  flex: 1;
+  /* margin: 1em; */
+}
+.row {
+  display: flex;
+}
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+#vis {
+  width: 50%;
+}
