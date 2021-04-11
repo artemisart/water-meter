@@ -1,4 +1,3 @@
-#include <SPI.h>
 #include <UIPEthernet.h>
 
 template <typename T>
@@ -14,15 +13,10 @@ void print(T t, Args... args)
 	print(args...);
 }
 
-byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-//IPAddress ip(192, 168, 1, 42);
-//IPAddress subnet(255, 255, 255, 0);
-//IPAddress gateway(192, 168, 1, 254);
-//IPAddress remote(216, 58, 214, 78);
-//EthernetServer server(80);
+byte mac[] = {0xBA, 0xBA, 0xFA, 0xCE, 0x10, 0x10};
+byte ip[] = {10, 0, 0, 2};
 EthernetClient client;
 char post_data[] = "water litres=";
-// int post_data_len = strlen(post_data);
 
 volatile float litres = 0;
 
@@ -72,7 +66,6 @@ void sendPost(String data)
 		client.print(F("\n"
 					   "Content-Type: application/x-www-form-urlencoded\n\n"));
 		client.println(data);
-		print(F("Sent"));
 	}
 	client.stop();
 }
