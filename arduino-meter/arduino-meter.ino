@@ -19,6 +19,7 @@ EthernetClient client;
 char post_data[] = "water litres=";
 
 volatile float litres = 0;
+volatile unsigned long lastInterrupt = 0;
 
 void setup()
 {
@@ -37,7 +38,10 @@ void setup()
 
 void onImpulse()
 {
-	litres += 0.5;
+  if (lastInterrupt + 10 < millis()) {
+	  litres += 0.5;
+  }
+  lastInterrupt = millis();
 }
 
 void loop()
