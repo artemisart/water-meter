@@ -46,6 +46,7 @@ void onImpulse()
 
 void loop()
 {
+	print(litres);
 	if (litres > 0)
 	{
 		noInterrupts();
@@ -55,6 +56,10 @@ void loop()
 		String data = post_data + String(litresCurrent, 1);
 
 		sendPost(data);
+	}
+	else
+	{
+		delay(10);
 	}
 }
 
