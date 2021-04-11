@@ -63,7 +63,7 @@ void sendPost(String data)
 	int ret = client.connect(Ethernet.gatewayIP(), 8086);
 	if (ret != 1)
 	{
-		print(F("Error connecting"));
+		print(F("Error connecting "), ret);
 	}
 	else
 	{
