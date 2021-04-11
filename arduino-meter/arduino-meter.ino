@@ -22,14 +22,17 @@ volatile float litres = 0;
 
 void setup()
 {
-	Serial.begin(250e3);
-	print("Ethernet begin ", Ethernet.begin(mac));
-	print(Ethernet.localIP());
-	print(Ethernet.gatewayIP());
-	print("Ethernet cable ", Ethernet.linkStatus());
-	//  server.begin();
-	pinMode(2, INPUT_PULLUP);
-	attachInterrupt(digitalPinToInterrupt(2), onImpulse, CHANGE);
+	Serial.begin(115200);
+	print("Hello");
+	Ethernet.begin(mac, ip);
+	//	print(
+	//		"Ethernet begin ",
+	//		"local IP ", Ethernet.localIP(),
+	//		" gateway IP ", Ethernet.gatewayIP(),
+	//		" Ethernet cable ", Ethernet.linkStatus(), Unknown, LinkON, LinkOFF,
+	//		" hardware status ", Ethernet.hardwareStatus());
+	pinMode(3, INPUT_PULLUP);
+	attachInterrupt(digitalPinToInterrupt(3), onImpulse, CHANGE);
 }
 
 void onImpulse()
