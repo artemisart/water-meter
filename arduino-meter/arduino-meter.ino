@@ -53,26 +53,31 @@ void loop()
 	}
 	if (litres > 0)
 	{
-		noInterrupts();
+		print(litres);
 		float litresCurrent = litres;
-		litres = 0;
-		interrupts();
+		litres -= litresCurrent; // don't set to 0 because of interrupts
 		String data = post_data + String(litresCurrent, 1);
 
-		sendPost(data);
+		if (sendPost(data) != 0)
+		{
+			// failed to send, so we'll send them later
+			litres += litresCurrent;
+		}
 	}
 	else
 	{
-		delay(10);
+		// delay(10);
 	}
 }
 
-void sendPost(String data)
+int sendPost(String data)
 {
 	int ret = client.connect(Ethernet.gatewayIP(), 8086);
 	if (ret != 1)
 	{
 		print(F("Error connecting "), ret);
+		client.stop();
+		return -1;
 	}
 	else
 	{
@@ -85,4 +90,5 @@ void sendPost(String data)
 		client.println(data);
 	}
 	client.stop();
+	return 0;
 }
