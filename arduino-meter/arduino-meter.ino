@@ -47,7 +47,10 @@ void onImpulse()
 
 void loop()
 {
-	print(litres);
+	if (client.available())
+	{
+		client.flush();
+	}
 	if (litres > 0)
 	{
 		noInterrupts();
