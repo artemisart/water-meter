@@ -5,7 +5,8 @@ function zip(arr1, arr2) {
 }
 
 async function query(q) {
-  const resp = await fetch(`http://localhost:8086/query?db=${DB}&q=${q}`, {
+  const encoded_q = encodeURIComponent(q);
+  const resp = await fetch(`http://10.0.0.1:8086/query?db=${DB}&q=${encoded_q}`, {
     method: "POST",
   });
   const json = await resp.json();
