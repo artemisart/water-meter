@@ -4,6 +4,15 @@ function zip(arr1, arr2) {
   return arr1.map((a1, i) => [a1, arr2[i]]);
 }
 
+function merge(a, b) {
+  return Object.entries(b).reduce((o, [k, v]) => {
+    o[k] = v && typeof v === 'object'
+      ? merge(o[k] = o[k] || (Array.isArray(v) ? [] : {}), v)
+      : v;
+    return o
+  }, a)
+}
+
 async function query(q) {
   const encoded_q = encodeURIComponent(q);
   const resp = await fetch(`http://10.0.0.1:8086/query?db=${DB}&q=${encoded_q}`, {
