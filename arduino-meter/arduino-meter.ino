@@ -73,6 +73,7 @@ void sendPost(String data)
 	else
 	{
 		client.print(F("POST /write?db=water_meter&precision=ms HTTP/1.1\n"
+					   "Host: 10.0.0.1:8086\n"
 					   "Content-Length: "));
 		client.print(data.length());
 		client.print(F("\n"

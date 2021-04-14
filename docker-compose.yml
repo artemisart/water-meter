@@ -2,7 +2,7 @@ version: "2.0"
 services:
   influxdb:
     image: influxdb:1.8
-    ports: [8086:8086]
+    ports: [10.0.0.1:8086:8086]
     volumes: [./data/influxdb:/var/lib/influxdb]
     environment:
       - INFLUXDB_DB=water_meter

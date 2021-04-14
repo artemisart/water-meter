@@ -10,7 +10,7 @@ import fire
 def live():
     wait = 2
     while True:
-        !curl -XPOST "localhost:8086/write?db=water_meter&precision=ms" --data-binary "water litres=1"
+        !curl -XPOST "10.0.0.1:8086/write?db=water_meter&precision=ms" --data-binary "water litres=1"
 
         wait = max(1, wait + uniform(-1, 1))
         print(wait)
@@ -21,7 +21,7 @@ def historic():
     wait = uniform(1, 3)
     while True:
         ts = int(dt.timestamp() * 1e3)
-        !curl -XPOST "localhost:8086/write?db=water_meter&precision=ms" --data-binary f"water litres=1 {ts}"
+        !curl -XPOST "10.0.0.1:8086/write?db=water_meter&precision=ms" --data-binary f"water litres=1 {ts}"
         print(dt)
         wait = max(1, wait + uniform(-1, 1))
         dt -= timedelta(seconds=wait)
