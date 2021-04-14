@@ -38,10 +38,11 @@ void setup()
 
 void onImpulse()
 {
-  if (lastInterrupt + 10 < millis()) {
-	  litres += 0.5;
-  }
-  lastInterrupt = millis();
+	if (lastInterrupt != 0 && lastInterrupt + 10 < millis())
+	{
+		litres += 0.5;
+	}
+	lastInterrupt = millis();
 }
 
 void loop()
