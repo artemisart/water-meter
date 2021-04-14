@@ -3,9 +3,10 @@
 }
 
 body {
-  display: flex;
-  /* height: 100vh; */
-  overflow: hidden;
+  height: 100vh;
+  margin: 0;
+  padding: 1em;
+  /* overflow: hidden; */
 }
 
 div {
@@ -20,6 +21,12 @@ div {
   flex-direction: column;
 }
 
-#vis {
-  width: 50%;
+#date {
+  /* position: absolute; */
+  margin: 0;
+  text-align: center;
 }
+
+/* #vis {
+  width: 50%;
+} */
