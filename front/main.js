@@ -1,4 +1,5 @@
 const DB = "water_meter";
+const LOG = false;
 dayjs.locale('fr');
 
 function zip(arr1, arr2) {
@@ -20,7 +21,8 @@ async function query(q) {
     method: "POST",
   });
   const json = await resp.json();
-  console.log({ json });
+  if (LOG)
+    console.log({ json });
   return json["results"].map((result) =>
     result.series
       ? result.series[0].values.map((row) =>
@@ -47,18 +49,13 @@ function base_graph() {
 }
 
 
-async function create_bar_graph(period, group_period, x_title) {
-  const start = dayjs().startOf(period).toISOString()
-  const prev = dayjs().startOf(period).subtract(1, period).toISOString()
-  const [current, previous] = await query(
-    `SELECT sum(litres) FROM water WHERE time>='${start}' GROUP BY time(${group_period}) fill(0);` +
-    `SELECT sum(litres) FROM water WHERE time>='${prev}' AND time<'${start}' GROUP BY time(${group_period}) fill(0);`
-  )
-  console.log({ period, start, group_period, current, domain: domain(period) })
+function spec_graph(period, x_title) {
+  // console.log({ period, start, domain: domain(period) })
   return {
     ...base_graph(),
     data: {
-      values: current,
+      name: 'source',
+      // values: current,
     },
     mark: {
       type: "line",
@@ -85,87 +82,56 @@ async function create_bar_graph(period, group_period, x_title) {
   }
 }
 
-async function main() {
-  const day2 = dayjs().startOf('day').subtract(1, 'day').toISOString()
-  let values, total
-  try {
-    [values, total] = await query(
-      `SELECT * FROM water WHERE time>='${day2}';`
-      + 'SELECT sum(litres) FROM water;'
+async function create_graph(element, { period, group_period, x_title, merge_spec }) {
+  function run_query() {
+    const start = dayjs().startOf(period).toISOString()
+    const prev = dayjs().startOf(period).subtract(1, period).toISOString()
+    return query(
+      `SELECT sum(litres) FROM water WHERE time>='${start}' GROUP BY time(${group_period}) fill(0);` +
+      `SELECT sum(litres) FROM water WHERE time>='${prev}' AND time<'${start}' GROUP BY time(${group_period}) fill(0);`
     )
   }
-  catch (error) {
-    document.getElementById('errors').innerHTML = (
-      "Problème de connexion à la base de données."
-      + " Rechargez la page ou redémarrez le Raspberry Pi."
-      + "<br><br>Détails :" + (new Option(error.toString()).innerHTML))
-  }
-  const counter_total = total[0].sum
+  const spec = spec_graph(period, x_title)
+  const graph = await vegaEmbed(element, merge(spec, merge_spec))
+  const [current, previous] = await run_query()
+  graph.view.data('source', current).run()
+  setInterval(async () => {
+    const [current] = await run_query()
+    graph.view.data('source', current).run()
+  }, 5000);
+}
 
-  console.log({ values, total });
+async function main() {
+  // update_counter()
 
-  let lastTime_ms = -Infinity;
-  for (const val of values) {
-    const time_ms = Date.parse(val.time);
-    const litresPerSecond = (val.litres * 1000) / (time_ms - lastTime_ms);
-    val.litresPerHour = litresPerSecond * 3600;
-    lastTime_ms = time_ms;
-  }
-  console.log({ values });
+  create_graph('#graph-day', {
+    period: 'day',
+    group_period: '10m',
+    x_title: 'Consommation par 10 minutes, sur 1 jour',
+    merge_spec: { encoding: { x: { axis: { format: '%H' } } } },
+    // merge_spec: { encoding: { x: { timeUnit: 'hours' } } },
+  })
+  create_graph('#graph-week', {
+    period: 'week',
+    group_period: '1h',
+    x_title: 'Consommation par heure, sur 1 semaine',
+    merge_spec: { encoding: { x: { axis: { format: '%A' } } } },
+    // merge_spec: { encoding: { x: { timeUnit: 'day' } } },
+  })
+  create_graph("#graph-month", {
+    period: 'month',
+    group_period: '1d',
+    x_title: 'Consommation par jour, sur 1 mois',
+    merge_spec: { encoding: { x: { axis: { format: '%e' } } } },
+  })
+  create_graph("#graph-year", {
+    period: 'year',
+    group_period: '1d',  // grouping by month is done with vega
+    x_title: 'Consommation par mois, sur 1 an',
+    merge_spec: { mark: { type: "bar" }, encoding: { x: { timeUnit: "month", scale: undefined }, y: { aggregate: 'sum' } } }
+  });
 
-  const graph_day = {
-    ...base_graph(),
-    data: {
-      values: values,
-    },
-    mark: {
-      type: "line",
-      interpolate: "step-before",
-      // interpolate: "monotone",
-      clip: true,
-    },
-    encoding: {
-      x: {
-        field: "time",
-        type: "temporal",
-        // timeUnit: "hoursminutes",
-        // timeUnit: "date",
-        title: "Consommation directe, aujourd'hui",
-        scale: {
-          domain: domain('day'),
-        },
-      },
-      y: {
-        field: "litresPerHour",
-        type: "quantitative",
-        title: "Litres par Heure",
-      },
-    },
-  };
-  // vegaEmbed("#graph-day", graph_day);
-  vegaEmbed("#graph-day", merge(
-    await create_bar_graph('day', '10m', 'Consommation par 10 minutes, sur 1 jour'),
-    // { encoding: { x: { timeUnit: 'hours' } } },
-    { encoding: { x: { axis: { format: '%H' } } } },
-  ));
-
-  vegaEmbed("#graph-week", merge(
-    await create_bar_graph('week', '1h', 'Consommation par heure, sur 1 semaine'),
-    // { encoding: { x: { timeUnit: 'day' } } },
-    { encoding: { x: { axis: { format: '%A' } } } },
-  ));
-  vegaEmbed("#graph-month", merge(
-    await create_bar_graph('month', '1d', 'Consommation par jour, sur 1 mois'),
-    { encoding: { x: { axis: { format: '%e' } } } },
-  ));
-  const graph = merge(
-    await create_bar_graph('year', '1d', 'Consommation par mois, sur 1 an'),
-    { mark: { type: "bar" }, encoding: { x: { timeUnit: "month", scale: undefined }, y: { aggregate: 'sum' } } }
-  )
-  console.log({ graph })
-  vegaEmbed("#graph-year", graph);
-
-  document.getElementById('date').innerHTML = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'long', timeStyle: 'medium' }).format(new Date()) + ` - ${counter_total}`
+  setInterval(() => update_counter(), 5000);
 }
 
 vega.defaultLocale({
@@ -184,7 +150,21 @@ vega.defaultLocale({
   "months": ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"],
   "shortMonths": ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 })
+
+async function update_counter() {
+  let total
+  try {
+    [total] = await query('SELECT sum(litres) FROM water;')
+  }
+  catch (error) {
+    document.getElementById('errors').innerHTML = (
+      "Problème de connexion à la base de données."
+      + " Rechargez la page ou redémarrez le Raspberry Pi."
+      + "<br><br>Détails :" + (new Option(error.toString()).innerHTML))
+  }
+  const counter_total = total[0].sum
+
+  document.getElementById('date').innerHTML = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'long', timeStyle: 'medium' }).format(new Date()) + ` - ${counter_total}`
+}
+
 main();
-setInterval(() => {
-  main();
-}, 5000);
