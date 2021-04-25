@@ -92,7 +92,7 @@ async function create_graph(element, { period, group_period, x_title, merge_spec
     )
   }
   const spec = spec_graph(period, x_title)
-  const graph = await vegaEmbed(element, merge(spec, merge_spec))
+  const graph = await vegaEmbed(element, merge(spec, merge_spec), { actions: false })
   const [current, previous] = await run_query()
   graph.view.data('source', current).run()
   setInterval(async () => {
