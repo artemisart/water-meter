@@ -155,6 +155,7 @@ async function update_counter() {
   let total
   try {
     [total] = await query('SELECT sum(litres) FROM water;')
+    document.getElementById('errors').innerHTML = ""
   }
   catch (error) {
     document.getElementById('errors').innerHTML = (
