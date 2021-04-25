@@ -131,7 +131,11 @@ async function main() {
     merge_spec: { mark: { type: "bar" }, encoding: { x: { timeUnit: "month", scale: undefined }, y: { aggregate: 'sum' } } }
   });
 
+  update_counter()
   setInterval(() => update_counter(), 5000);
+  // force vega to compute the correct graph size
+  setTimeout(() => window.dispatchEvent(new Event('resize')), 300)
+  setTimeout(() => window.dispatchEvent(new Event('resize')), 1000)
 }
 
 vega.defaultLocale({
