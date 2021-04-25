@@ -106,15 +106,15 @@ async function main() {
 
   create_graph('#graph-day', {
     period: 'day',
-    group_period: '10m',
-    x_title: 'Consommation par 10 minutes, sur 1 jour',
-    merge_spec: { encoding: { x: { axis: { format: '%H' } } } },
+    group_period: '30m',
+    x_title: 'Consommation par 30 minutes, sur 1 jour',
+    merge_spec: { encoding: { x: { axis: { format: '%-H' } } } },
     // merge_spec: { encoding: { x: { timeUnit: 'hours' } } },
   })
   create_graph('#graph-week', {
     period: 'week',
-    group_period: '1h',
-    x_title: 'Consommation par heure, sur 1 semaine',
+    group_period: '2h',
+    x_title: 'Consommation par 2h, sur 1 semaine',
     merge_spec: { encoding: { x: { axis: { format: '%A' } } } },
     // merge_spec: { encoding: { x: { timeUnit: 'day' } } },
   })
