@@ -5,14 +5,11 @@
 body {
   height: 100vh;
   margin: 0;
-  padding: 1em;
-  /* overflow: hidden; */
+  padding: 0;
+  overflow: hidden;
+
 }
 
-div {
-  flex: 1;
-  /* margin: 1em; */
-}
 .row {
   display: flex;
 }
@@ -20,11 +17,27 @@ div {
   display: flex;
   flex-direction: column;
 }
+.grow {
+  flex: 1 0;
+  min-height: 0;
+}
+.spacer {
+  flex: 1;
+}
+
+.title-bar button {
+  margin: 6px;
+  padding: 0 6px;
+  font-size: 1em;
+}
+.title-bar button + button {
+  margin-left: 0;
+}
 
 #date {
   /* position: absolute; */
-  margin: 0;
-  text-align: center;
+  /* font-size: 2em; */
+  margin: auto 1rem;
 }
 
 /* #vis {

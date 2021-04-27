@@ -62,6 +62,7 @@ function spec_graph(period, x_title) {
       // interpolate: "step",
       interpolate: "monotone",
       clip: true,
+      tooltip: true,
     },
     encoding: {
       x: {
@@ -172,4 +173,34 @@ async function update_counter() {
   document.getElementById('date').innerHTML = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'long', timeStyle: 'medium' }).format(new Date()) + ` - ${counter_total}`
 }
 
-main();
+function show(button, element) {
+  const buttons = document.querySelectorAll('button')
+  for (const button of buttons) {
+    button.style.backgroundColor = ''
+  }
+  button.style.backgroundColor = 'lightblue'
+  const graphs = document.querySelectorAll('[id^=graph]')
+  if (element === undefined) {
+    for (const graph of graphs) {
+      graph.style.display = ''
+    }
+  }
+  else {
+    for (const graph of graphs) {
+      graph.style.display = 'none'
+    }
+    document.querySelector(element).style.display = ''
+  }
+  window.dispatchEvent(new Event('resize'))
+}
+
+function toggleFullScreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen()
+  }
+  else {
+    document.exitFullscreen()
+  }
+}
+
+main()

@@ -13,14 +13,22 @@
 </head>
 
 <body class="column">
-  <h1 id="date">Date - Total</h1>
-  <div class="row" style="height: 42%;">
-    <div id="graph-day" style="width: 50%;"></div>
-    <div id="graph-week" style="width: 50%;"></div>
+  <div class="row title-bar">
+    <button onclick="show(this)" style="background-color: lightblue;">TOUT</button>
+    <button onclick="show(this, '#graph-day')">Jour</button>
+    <button onclick="show(this, '#graph-week')">Semaine</button>
+    <button onclick="show(this, '#graph-month')">Mois</button>
+    <button onclick="show(this, '#graph-year')">Année</button>
+    <div class="spacer"></div>
+    <h1 id="date">Date - Total</h1>
+    <div class="spacer"></div>
+    <button onclick="toggleFullScreen()">⛶</button>
   </div>
-  <div class="row" style="height: 42%;">
-    <div id="graph-month" style="width: 50%;"></div>
-    <div id="graph-year" style="width: 50%;"></div>
+  <div class="column grow">
+    <div class="grow" id="graph-day"></div>
+    <div class="grow" id="graph-week"></div>
+    <div class="grow" id="graph-month"></div>
+    <div class="grow" id="graph-year"></div>
   </div>
   <span id="errors"></span>
   <script src="main.js"></script>
