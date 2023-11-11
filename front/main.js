@@ -17,7 +17,7 @@ function merge(a, b) {
 
 async function query(q) {
   const encoded_q = encodeURIComponent(q);
-  const resp = await fetch(`http://10.0.0.1:8086/query?db=${DB}&q=${encoded_q}`, {
+  const resp = await fetch(`http://${location.hostname}:8086/query?db=${DB}&q=${encoded_q}`, {
     method: "POST",
   });
   const json = await resp.json();
