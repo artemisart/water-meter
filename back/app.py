@@ -123,7 +123,7 @@ def write(
     assert db == 'water_meter'
     assert precision == 'ms'
     print(f"POST /write data={data}")
-    val = float(data['water'].removeprefix('litres='))
+    val = float(data['water litres'])
     state.db.execute(
         '''INSERT INTO litres_ts (ts, litres) VALUES (unixepoch(), :val)
             ON CONFLICT (ts) DO UPDATE SET litres = litres + :val''',
