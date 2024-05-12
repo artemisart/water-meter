@@ -61,11 +61,11 @@ def db_litres_by_day(db: sqlite3.Connection, start: date, end: date) -> list[tup
     ).fetchall()
 
 
-def db_litres_by_month(db: sqlite3.Connection, start: date, end: date) -> list[tuple[int, float]]:
+def db_litres_by_month(db: sqlite3.Connection, start: date, end: date) -> list[tuple[str, float]]:
     return db.execute(
         '''
         SELECT
-            unixepoch(strftime('%Y-%m-01', date)) AS month,
+            unixepoch(strftime('%Y-%m-01', date, 'unixepoch')) AS month,
             sum(litres)
         FROM litres_by_day
         WHERE date BETWEEN unixepoch(:start) AND unixepoch(:end)
