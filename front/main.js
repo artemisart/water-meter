@@ -1,5 +1,5 @@
 const DB = "water_meter";
-const LOG = false;
+const LOG = true;
 dayjs.locale('fr');
 
 function zip(arr1, arr2) {
@@ -15,21 +15,12 @@ function merge(a, b) {
   }, a)
 }
 
-async function query(q) {
-  const encoded_q = encodeURIComponent(q);
-  const resp = await fetch(`http://${location.hostname}:8086/query?db=${DB}&q=${encoded_q}`, {
-    method: "POST",
-  });
+async function query() {
+  const resp = await fetch(`/query`, { method: "POST" });
   const json = await resp.json();
   if (LOG)
     console.log({ json });
-  return json["results"].map((result) =>
-    result.series
-      ? result.series[0].values.map((row) =>
-        Object.fromEntries(zip(result.series[0].columns, row))
-      )
-      : []
-  );
+  return json
 }
 
 function domain(unit) {
@@ -87,24 +78,25 @@ async function create_graph(element, { period, group_period, x_title, merge_spec
   function run_query() {
     const start = dayjs().startOf(period).toISOString()
     const prev = dayjs().startOf(period).subtract(1, period).toISOString()
-    return query(
-      `SELECT sum(litres) FROM water WHERE time>='${start}' GROUP BY time(${group_period}) fill(0);` +
-      `SELECT sum(litres) FROM water WHERE time>='${prev}' AND time<'${start}' GROUP BY time(${group_period}) fill(0);`
-    )
+    // return query(
+    //   `SELECT sum(litres) FROM water WHERE time>='${start}' GROUP BY time(${group_period}) fill(0);` +
+    //   `SELECT sum(litres) FROM water WHERE time>='${prev}' AND time<'${start}' GROUP BY time(${group_period}) fill(0);`
+    // )
+    // return query()['today']
   }
   const spec = spec_graph(period, x_title)
   const graph = await vegaEmbed(element, merge(spec, merge_spec), { actions: false })
   const [current, previous] = await run_query()
   graph.view.data('source', current).run()
-  setInterval(async () => {
-    const [current] = await run_query()
-    graph.view.data('source', current).run()
-  }, 5000);
+  // setInterval(async () => {
+  //   const [current] = await run_query()
+  //   graph.view.data('source', current).run()
+  // }, 5000);
 }
 
 async function main() {
   // update_counter()
-
+  const results = query()
   create_graph('#graph-day', {
     period: 'day',
     group_period: '30m',
