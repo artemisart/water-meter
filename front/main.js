@@ -82,34 +82,34 @@ async function create_graph(element, { period, x_title, merge_spec, data }) {
 
 async function main() {
   // update_counter()
-  const results = await query();
+  const results = await query()
   create_graph('#graph-day', {
     period: 'day',
     x_title: 'Consommation par 30 minutes, sur 1 jour',
     merge_spec: { encoding: { x: { axis: { format: '%-H' } } } },
     data: results.today.curr
-  });
+  })
   create_graph('#graph-week', {
     period: 'week',
     x_title: 'Consommation par 2 heures, sur 1 semaine',
     merge_spec: { encoding: { x: { axis: { format: '%-H' } } } },
     data: results.week.curr
-  });
+  })
   create_graph('#graph-month', {
     period: 'month',
     x_title: 'Consommation par jour, sur 1 mois',
     merge_spec: { encoding: { x: { axis: { format: '%-d' } } } },
     data: results.month.curr
-  });
+  })
   create_graph('#graph-year', {
     period: 'year',
     x_title: 'Consommation par mois, sur 1 an',
     merge_spec: { mark: { type: "bar" }, encoding: { x: { timeUnit: "month", scale: undefined }, y: { aggregate: 'sum' } } },
     data: results.year.curr
-  });
+  })
 
-  update_counter()
-  setInterval(() => update_counter(), 5000);
+  // update_counter()
+  // setInterval(() => update_counter(), 5000)
   // force vega to compute the correct graph size
   setTimeout(() => window.dispatchEvent(new Event('resize')), 300)
   setTimeout(() => window.dispatchEvent(new Event('resize')), 1000)
@@ -132,22 +132,22 @@ vega.defaultLocale({
   "shortMonths": ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 })
 
-async function update_counter() {
-  let total
-  try {
-    [total] = await query('SELECT sum(litres) FROM water;')
-    document.getElementById('errors').innerHTML = ""
-  }
-  catch (error) {
-    document.getElementById('errors').innerHTML = (
-      "Problème de connexion à la base de données."
-      + " Rechargez la page ou redémarrez le Raspberry Pi."
-      + "<br><br>Détails :" + (new Option(error.toString()).innerHTML))
-  }
-  const counter_total = total[0].sum
+// async function update_counter() {
+//   let total
+//   try {
+//     [total] = await query('SELECT sum(litres) FROM water;')
+//     document.getElementById('errors').innerHTML = ""
+//   }
+//   catch (error) {
+//     document.getElementById('errors').innerHTML = (
+//       "Problème de connexion à la base de données."
+//       + " Rechargez la page ou redémarrez le Raspberry Pi."
+//       + "<br><br>Détails :" + (new Option(error.toString()).innerHTML))
+//   }
+//   const counter_total = total[0].sum
 
-  document.getElementById('date').innerHTML = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'long', timeStyle: 'medium' }).format(new Date()) + ` - ${counter_total}`
-}
+//   document.getElementById('date').innerHTML = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'long', timeStyle: 'medium' }).format(new Date()) + ` - ${counter_total}`
+// }
 
 function show(button, element) {
   const buttons = document.querySelectorAll('button')
