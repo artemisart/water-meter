@@ -74,54 +74,38 @@ function spec_graph(period, x_title) {
   }
 }
 
-async function create_graph(element, { period, group_period, x_title, merge_spec }) {
-  function run_query() {
-    const start = dayjs().startOf(period).toISOString()
-    const prev = dayjs().startOf(period).subtract(1, period).toISOString()
-    // return query(
-    //   `SELECT sum(litres) FROM water WHERE time>='${start}' GROUP BY time(${group_period}) fill(0);` +
-    //   `SELECT sum(litres) FROM water WHERE time>='${prev}' AND time<'${start}' GROUP BY time(${group_period}) fill(0);`
-    // )
-    // return query()['today']
-  }
+async function create_graph(element, { period, x_title, merge_spec, data }) {
   const spec = spec_graph(period, x_title)
   const graph = await vegaEmbed(element, merge(spec, merge_spec), { actions: false })
-  const [current, previous] = await run_query()
-  graph.view.data('source', current).run()
-  // setInterval(async () => {
-  //   const [current] = await run_query()
-  //   graph.view.data('source', current).run()
-  // }, 5000);
+  graph.view.data('source', data).run()
 }
 
 async function main() {
   // update_counter()
-  const results = query()
+  const results = await query();
   create_graph('#graph-day', {
     period: 'day',
-    group_period: '30m',
     x_title: 'Consommation par 30 minutes, sur 1 jour',
     merge_spec: { encoding: { x: { axis: { format: '%-H' } } } },
-    // merge_spec: { encoding: { x: { timeUnit: 'hours' } } },
-  })
+    data: results.today.curr
+  });
   create_graph('#graph-week', {
     period: 'week',
-    group_period: '2h',
-    x_title: 'Consommation par 2h, sur 1 semaine',
-    merge_spec: { encoding: { x: { axis: { format: '%A' } } } },
-    // merge_spec: { encoding: { x: { timeUnit: 'day' } } },
-  })
-  create_graph("#graph-month", {
+    x_title: 'Consommation par 2 heures, sur 1 semaine',
+    merge_spec: { encoding: { x: { axis: { format: '%-H' } } } },
+    data: results.week.curr
+  });
+  create_graph('#graph-month', {
     period: 'month',
-    group_period: '1d',
     x_title: 'Consommation par jour, sur 1 mois',
-    merge_spec: { encoding: { x: { axis: { format: '%e' } } } },
-  })
-  create_graph("#graph-year", {
+    merge_spec: { encoding: { x: { axis: { format: '%-d' } } } },
+    data: results.month.curr
+  });
+  create_graph('#graph-year', {
     period: 'year',
-    group_period: '1d',  // grouping by month is done with vega
     x_title: 'Consommation par mois, sur 1 an',
-    merge_spec: { mark: { type: "bar" }, encoding: { x: { timeUnit: "month", scale: undefined }, y: { aggregate: 'sum' } } }
+    merge_spec: { mark: { type: "bar" }, encoding: { x: { timeUnit: "month", scale: undefined }, y: { aggregate: 'sum' } } },
+    data: results.year.curr
   });
 
   update_counter()
