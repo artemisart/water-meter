@@ -41,43 +41,70 @@ function base_graph() {
 
 
 function spec_graph(period, x_title) {
-  // console.log({ period, start, domain: domain(period) })
   return {
     ...base_graph(),
     data: {
-      name: 'source',
-      // values: current,
+      values: [],
     },
-    mark: {
-      type: "line",
-      // interpolate: "step",
-      interpolate: "monotone",
-      clip: true,
-      tooltip: true,
-    },
-    encoding: {
-      x: {
-        field: "time",
-        type: "temporal",
-        // timeUnit: "dayhours",
-        title: x_title,
-        scale: {
-          domain: domain(period),
+    layer: [
+      {
+        mark: {
+          type: "line",
+          interpolate: "monotone",
+          clip: true,
+          tooltip: true,
+        },
+        encoding: {
+          x: {
+            field: "time",
+            type: "temporal",
+            title: x_title,
+            scale: {
+              domain: domain(period),
+            },
+          },
+          y: {
+            field: "sum",
+            type: "quantitative",
+            title: "Litres",
+          },
+          color: { value: "blue" },
         },
       },
-      y: {
-        field: "sum",
-        type: "quantitative",
-        title: "Litres",
+      {
+        mark: {
+          type: "line",
+          interpolate: "monotone",
+          clip: true,
+          tooltip: true,
+          strokeDash: [5, 5],
+        },
+        encoding: {
+          x: {
+            field: "time",
+            type: "temporal",
+            title: x_title,
+            scale: {
+              domain: domain(period),
+            },
+          },
+          y: {
+            field: "sum",
+            type: "quantitative",
+            title: "Litres",
+          },
+          color: { value: "red" },
+        },
       },
-    },
+    ],
   }
 }
 
 async function create_graph(element, { period, x_title, merge_spec, data }) {
-  const spec = spec_graph(period, x_title)
-  const graph = await vegaEmbed(element, merge(spec, merge_spec), { actions: false })
-  graph.view.data('source', data).run()
+  const spec = spec_graph(period, x_title);
+  const graph = await vegaEmbed(element, merge(spec, merge_spec), { actions: false });
+  graph.view.data('source', data.curr).run();
+  graph.view.data('source', data.prev).run();
 }
 
 async function main() {
@@ -87,26 +114,26 @@ async function main() {
     period: 'day',
     x_title: 'Consommation par 30 minutes, sur 1 jour',
     merge_spec: { encoding: { x: { axis: { format: '%-H' } } } },
-    data: results.today.curr
-  })
+    data: results.today,
+  });
   create_graph('#graph-week', {
     period: 'week',
     x_title: 'Consommation par 2 heures, sur 1 semaine',
     merge_spec: { encoding: { x: { axis: { format: '%-H' } } } },
-    data: results.week.curr
-  })
+    data: results.week,
+  });
   create_graph('#graph-month', {
     period: 'month',
     x_title: 'Consommation par jour, sur 1 mois',
     merge_spec: { encoding: { x: { axis: { format: '%-d' } } } },
-    data: results.month.curr
-  })
+    data: results.month,
+  });
   create_graph('#graph-year', {
     period: 'year',
     x_title: 'Consommation par mois, sur 1 an',
     merge_spec: { mark: { type: "bar" }, encoding: { x: { timeUnit: "month", scale: undefined }, y: { aggregate: 'sum' } } },
-    data: results.year.curr
-  })
+    data: results.year,
+  });
 
   // update_counter()
   // setInterval(() => update_counter(), 5000)
