@@ -123,7 +123,7 @@ def query(state: State) -> dict:
     _7d = timedelta(days=7)
 
     return {
-        'today': {
+        'day': {
             'curr': db_litres_by_period(state.db, start=today, end=today + _1d, period_s=30 * 60),
             'prev': db_litres_by_period(state.db, start=today - _1d, end=today, period_s=30 * 60),
             'period': '30m',

@@ -44,103 +44,87 @@ function spec_graph(period, x_title) {
   return {
     ...base_graph(),
     data: {
-      values: [],
+      name: 'source',
     },
-    layer: [
-      {
-        mark: {
-          type: "line",
-          interpolate: "monotone",
-          clip: true,
-          tooltip: true,
-        },
-        encoding: {
-          x: {
-            field: "time",
-            type: "temporal",
-            title: x_title,
-            scale: {
-              domain: domain(period),
-            },
-          },
-          y: {
-            field: "sum",
-            type: "quantitative",
-            title: "Litres",
-          },
-          color: { value: "blue" },
+    mark: {
+      type: "line",
+      interpolate: "monotone",
+      clip: true,
+      tooltip: true,
+    },
+    encoding: {
+      x: {
+        field: "time",
+        type: "temporal",
+        title: x_title,
+        scale: {
+          domain: domain(period),
         },
       },
-      {
-        mark: {
-          type: "line",
-          interpolate: "monotone",
-          clip: true,
-          tooltip: true,
-          strokeDash: [5, 5],
-        },
-        encoding: {
-          x: {
-            field: "time",
-            type: "temporal",
-            title: x_title,
-            scale: {
-              domain: domain(period),
-            },
-          },
-          y: {
-            field: "sum",
-            type: "quantitative",
-            title: "Litres",
-          },
-          color: { value: "red" },
-        },
+      y: {
+        field: "litres",
+        type: "quantitative",
+        title: "Litres",
       },
-    ],
+      color: { field: "name", type: "nominal" },
+    },
   }
 }
 
-async function create_graph(element, { period, x_title, merge_spec, data }) {
-  const spec = spec_graph(period, x_title);
-  const graph = await vegaEmbed(element, merge(spec, merge_spec), { actions: false });
-  graph.view.data('source', data.curr).run();
-  graph.view.data('source', data.prev).run();
+async function create_graph(element, { period, x_title, merge_spec }) {
+  const spec = spec_graph(period, x_title)
+  return await vegaEmbed(element, merge(spec, merge_spec), { actions: false })
 }
 
 async function main() {
-  // update_counter()
-  const results = await query()
-  create_graph('#graph-day', {
+  const graph_day = await create_graph('#graph-day', {
     period: 'day',
     x_title: 'Consommation par 30 minutes, sur 1 jour',
     merge_spec: { encoding: { x: { axis: { format: '%-H' } } } },
-    data: results.today,
-  });
-  create_graph('#graph-week', {
+  })
+  const graph_week = await create_graph('#graph-week', {
     period: 'week',
     x_title: 'Consommation par 2 heures, sur 1 semaine',
     merge_spec: { encoding: { x: { axis: { format: '%-H' } } } },
-    data: results.week,
-  });
-  create_graph('#graph-month', {
+  })
+  const graph_month = await create_graph('#graph-month', {
     period: 'month',
     x_title: 'Consommation par jour, sur 1 mois',
     merge_spec: { encoding: { x: { axis: { format: '%-d' } } } },
-    data: results.month,
-  });
-  create_graph('#graph-year', {
+  })
+  const graph_year = await create_graph('#graph-year', {
     period: 'year',
     x_title: 'Consommation par mois, sur 1 an',
-    merge_spec: { mark: { type: "bar" }, encoding: { x: { timeUnit: "month", scale: undefined }, y: { aggregate: 'sum' } } },
-    data: results.year,
-  });
+    merge_spec: { mark: { type: "bar" }, encoding: { x: { timeUnit: "month", scale: undefined } } },
+  })
 
-  // update_counter()
-  // setInterval(() => update_counter(), 5000)
+  async function update() {
+    const results = await query()
+    update_counter(results.total)
+
+    const to_update = [
+      [graph_day, results.day],
+      [graph_week, results.week],
+      [graph_month, results.month],
+      [graph_year, results.year],
+    ]
+
+    for (const [graph, data] of to_update) {
+      const rows = [
+        ...data.prev.map(([ts, litres]) => ({ time: ts * 1000, litres, name: "Précédent" })),
+        ...data.curr.map(([ts, litres]) => ({ time: ts * 1000, litres, name: "Actuel" })),
+      ]
+      graph.view.data('source', rows).run()
+    }
+  }
+
+  await update()
+  setInterval(() => update(), 5000)
   // force vega to compute the correct graph size
   setTimeout(() => window.dispatchEvent(new Event('resize')), 300)
   setTimeout(() => window.dispatchEvent(new Event('resize')), 1000)
 }
+
 
 vega.defaultLocale({
   "decimal": ",",
@@ -159,22 +143,10 @@ vega.defaultLocale({
   "shortMonths": ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 })
 
-// async function update_counter() {
-//   let total
-//   try {
-//     [total] = await query('SELECT sum(litres) FROM water;')
-//     document.getElementById('errors').innerHTML = ""
-//   }
-//   catch (error) {
-//     document.getElementById('errors').innerHTML = (
-//       "Problème de connexion à la base de données."
-//       + " Rechargez la page ou redémarrez le Raspberry Pi."
-//       + "<br><br>Détails :" + (new Option(error.toString()).innerHTML))
-//   }
-//   const counter_total = total[0].sum
-
-//   document.getElementById('date').innerHTML = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'long', timeStyle: 'medium' }).format(new Date()) + ` - ${counter_total}`
-// }
+function update_counter(total) {
+  const date = new Intl.DateTimeFormat(navigator.language, { dateStyle: 'long', timeStyle: 'medium' }).format(new Date())
+  document.getElementById('date').innerHTML = date + ` - ${total} L`
+}
 
 function show(button, element) {
   const buttons = document.querySelectorAll('button')
