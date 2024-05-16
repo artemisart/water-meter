@@ -1,7 +1,8 @@
 import sqlite3
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 from typing import Annotated, Literal
 
+from dateutil.relativedelta import relativedelta
 from litestar import Litestar, post
 from litestar.datastructures import State
 from litestar.enums import RequestEncodingType
@@ -39,9 +40,11 @@ def get_db(app: Litestar) -> sqlite3.Connection:
     return app.state.db
 
 
-def db_litres_by_period(db: sqlite3.Connection, start: date, end: date, period_s: int) -> list[tuple[int, float]]:
+def db_litres_by_period(
+    db: sqlite3.Connection, start: datetime, end: datetime, period_s: int
+) -> list[tuple[int, float]]:
     assert period_s < 24 * 3600, f"Use db_litres_by_day, {period_s=}"
-    return db.execute(
+    raw = db.execute(
         '''
         SELECT
             ts / :period_s * :period_s AS t,
@@ -53,10 +56,16 @@ def db_litres_by_period(db: sqlite3.Connection, start: date, end: date, period_s
         ''',
         {'start': start, 'end': end, 'period_s': period_s},
     ).fetchall()
+    by_period = dict(raw)
+    dt = start
+    while dt < end:
+        by_period.setdefault(int(dt.timestamp()), 0)
+        dt += timedelta(seconds=period_s)
+    return list(by_period.items())
 
 
-def db_litres_by_day(db: sqlite3.Connection, start: date, end: date) -> list[tuple[int, float]]:
-    return db.execute(
+def db_litres_by_day(db: sqlite3.Connection, start: datetime, end: datetime) -> list[tuple[int, float]]:
+    raw = db.execute(
         '''
         SELECT
             date,
@@ -67,10 +76,16 @@ def db_litres_by_day(db: sqlite3.Connection, start: date, end: date) -> list[tup
         ''',
         {'start': start, 'end': end},
     ).fetchall()
+    by_day = dict(raw)
+    dt = start
+    while dt < end:
+        by_day.setdefault(int(dt.timestamp()), 0)
+        dt += timedelta(days=1)
+    return list(by_day.items())
 
 
-def db_litres_by_month(db: sqlite3.Connection, start: date, end: date) -> list[tuple[str, float]]:
-    return db.execute(
+def db_litres_by_month(db: sqlite3.Connection, start: datetime, end: datetime) -> list[tuple[str, float]]:
+    raw = db.execute(
         '''
         SELECT
             unixepoch(strftime('%Y-%m-01', date, 'unixepoch')) AS month,
@@ -82,6 +97,15 @@ def db_litres_by_month(db: sqlite3.Connection, start: date, end: date) -> list[t
         ''',
         {'start': start, 'end': end},
     ).fetchall()
+    by_month = dict(raw)
+    dt = start
+    while dt < end:
+        by_month.setdefault(int(dt.timestamp()), 0)
+        if dt.month == 12:
+            dt = dt.replace(year=dt.year + 1, month=1)
+        else:
+            dt = dt.replace(month=dt.month + 1)
+    return list(by_month.items())
 
 
 def close_db(app: Litestar) -> None:
@@ -90,10 +114,11 @@ def close_db(app: Litestar) -> None:
 
 
 @post('/query', sync_to_thread=False)
-def query(db: Literal['water_meter'], q: str, state: State) -> dict:
-    assert db == 'water_meter'
-    today = date.today()
+def query(state: State) -> dict:
+    today = datetime.combine(date.today(), time())
     start_week = today - timedelta(days=today.weekday())
+    start_month = today.replace(day=1)
+    start_year = today.replace(month=1, day=1)
     _1d = timedelta(days=1)
     _7d = timedelta(days=7)
 
@@ -109,13 +134,13 @@ def query(db: Literal['water_meter'], q: str, state: State) -> dict:
             'period': '2h',
         },
         'month': {
-            'curr': db_litres_by_day(state.db, start=today.replace(day=1), end=today + _1d),
-            'prev': db_litres_by_day(state.db, start=(today - _1d).replace(day=1), end=today),
+            'curr': db_litres_by_day(state.db, start=start_month, end=start_month + relativedelta(months=1)),
+            'prev': db_litres_by_day(state.db, start=start_month + relativedelta(months=-1), end=start_month),
             'period': '1d',
         },
         'year': {
-            'curr': db_litres_by_month(state.db, start=today.replace(month=1, day=1), end=today + _1d),
-            'prev': db_litres_by_month(state.db, start=(today - _1d).replace(month=1, day=1), end=today),
+            'curr': db_litres_by_month(state.db, start=start_year, end=today + relativedelta(years=1)),
+            'prev': db_litres_by_month(state.db, start=start_year + relativedelta(years=-1), end=start_year),
             'period': '1d',
         },
         'total': state.db.execute(
