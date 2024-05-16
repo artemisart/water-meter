@@ -27,6 +27,14 @@ def get_db(app: Litestar) -> sqlite3.Connection:
             litres REAL
         )'''
     )
+    # adjustments.total_litres is a the beginning of the day
+    db.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS adjustments (
+            date INTEGER PRIMARY KEY,
+            total_litres REAL
+        )'''
+    )
     db.commit()
     return app.state.db
 
@@ -110,6 +118,11 @@ def query(db: Literal['water_meter'], q: str, state: State) -> dict:
             'prev': db_litres_by_month(state.db, start=(today - _1d).replace(month=1, day=1), end=today),
             'period': '1d',
         },
+        'total': state.db.execute(
+            '''
+            SELECT a.total_litres + (SELECT sum(litres) FROM litres_by_day WHERE date >= a.date)
+            FROM adjustments a ORDER BY date DESC LIMIT 1'''
+        ).fetchone()[0],
     }
 
 
